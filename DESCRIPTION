@@ -18,3 +18,7 @@ Imports:
 	pbmcapply,
 	ineq,
 	ggplot2
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
