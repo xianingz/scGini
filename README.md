@@ -20,7 +20,12 @@ NBFitPlot(scdat, seed=1)
 ## Calculation of corrected Gini index  
 `scGini` function calculates the corrected Gini index by using the raw counts scRNA-seq data as input (without any processings like normalization). Parallel computing can be enabled by setting the `ncore` parameter.
 ```r
-scGini(dat, ncore=1)
+scgini <- scGini(dat, ncore=1)
+```
+## Neighborhood smoothing
+The results from `scGini` can be further improved by borrowing information from neighboring cells. `scGiniSmooth` functions implements a neighborhood difussion map to improve the scGini prediction.
+```{r}
+sGini <- scGiniSmooth(dat, scgini, nGenes=1000)
 ```
 
 ## Reference
