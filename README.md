@@ -1,24 +1,11 @@
----
-title: "Introduction to the *scGini* R Package"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Introduction}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
-```{r setup}
-library(scGini)
-```
+# scGini
+scGini implements a Negative-Binomial model for recovering the true Gini index for individual single cell based on scRNA-seq data, which is an estimation of the stemness level of the single cell.
 
 ## Installation
+The latest version of scGini R package can be installed from Github.
+`
+devtools::install_github("xianingz/scGini")
+`
 
 ## Goodness of fit
 
