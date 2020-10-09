@@ -2,3 +2,4 @@
 
 export(NBFitPlot)
 export(scGini)
+export(scGiniSmooth)

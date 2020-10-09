@@ -22,10 +22,10 @@ NBFitPlot <- function(dat,seed=1){
   sim.fre$est.prob <- sim.fre$Freq/sum(sim.fre$Freq)
   sim.fre$Exp <- as.numeric(as.character(sim.fre$sim))
   p <- ggplot2::ggplot(dat.fre) +
-    ggplot2::theme(panel.background = element_rect(fill = "white", colour = "black")) +
-    ggplot2::geom_point(aes(log(Exp+1), prob), col="blue",alpha=0.5) +
-    ggplot2::geom_point(data=sim.fre, aes(log(Exp+1),est.prob),col="red", alpha=0.5)+
-    ggplot2::stat_smooth(method=lm, formula = y ~ splines::bs(x, 3), aes(log(Exp+1),est.prob),col="red", alpha=0.3, size=0.3) +
+    ggplot2::theme(panel.background = ggplot2::element_rect(fill = "white", colour = "black")) +
+    ggplot2::geom_point(ggplot2::aes(log(Exp+1), prob), col="blue",alpha=0.5) +
+    ggplot2::geom_point(data=sim.fre, ggplot2::aes(log(Exp+1),est.prob),col="red", alpha=0.5)+
+    ggplot2::stat_smooth(method=lm, formula = y ~ splines::bs(x, 3), ggplot2::aes(log(Exp+1),est.prob),col="red", alpha=0.3, size=0.3) +
     ggplot2::scale_y_log10(limits=c(1e-6,1)) + ggplot2::ylab("Probability")
   return(p)
 }

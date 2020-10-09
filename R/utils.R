@@ -104,3 +104,56 @@ gnf.nb <- function(data, er=1e-2){
   colnames(alfs) <- c("eta", "alpha", "Iter", "Gini", "cGini")
   return(alfs)
 }
+
+
+## Normalization and log transformation
+normalize <- function(expmat){
+  expmat <- apply(expmat,2, function(x) x/sum(x)*1e4)
+  expmat <- log(expmat+1)
+  expmat
+}
+
+#Function to identify the most variable genes
+hvg <- function(expmat, nGenes) {
+  A <- expmat
+  n_expr <- rowSums(A > 0);
+  A_filt <- A[n_expr >= 0.05 * ncol(A),];
+  vars <- apply(A_filt, 1, var);
+  means <- apply(A_filt, 1, mean);
+  disp <- vars / means;
+  last_disp <- tail(sort(disp), nGenes)[1];
+  A_filt <- A_filt[disp >= last_disp,];
+
+  return(A_filt)
+}
+
+#Calculate similarity matrix
+similarity_matrix_cleaned <- function(similarity_matrix){
+  D <- similarity_matrix
+  cutoff <- mean(as.vector(D))
+  diag(D) <- 0;
+  D[which(D < 0)] <- 0;
+  D[which(D <= cutoff)] <- 0;
+  Ds <- D
+  D <- D / rowSums(D);
+  D[which(rowSums(Ds)==0),] <- 0
+  return(D)
+}
+
+#Difussion map
+diffused <- function(similarity_matrix_cleaned, score, ALPHA = 0.9){
+  vals <- score
+  v_prev <- rep(vals);
+  v_curr <- rep(vals);
+
+  for(i in 1:10000) {
+    v_prev <- rep(v_curr);
+    v_curr <- ALPHA * (similarity_matrix_cleaned %*% v_curr) + (1 - ALPHA) * vals;
+
+    diff <- mean(abs(v_curr - v_prev));
+    if(diff <= 1e-6) {
+      break;
+    }
+  }
+  return(v_curr)
+}

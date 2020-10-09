@@ -4,6 +4,9 @@ scGini implements a Negative-Binomial model for recovering the true Gini index f
 ## Installation
 The latest version of scGini R package can be installed from Github.  
 ```r
+require(pbmcapply)
+require(ineq)
+require(ggplot2)
 devtools::install_github("xianingz/scGini")
 library(scGini)
 ```

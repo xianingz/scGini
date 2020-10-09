@@ -16,10 +16,66 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(scGini)
+library(ggplot2)
 ```
 
+`scGini` is built based on the concept that Gini index can be used to quantify the differentiation potency of single cells in scRNA-seq data. Generally, a larger Gini index implies a higher level of uneven distribution of the gene expression within a cell. Such a cell devotes most of its transcripts on a smaller spectrum of unique genes, and this in turn may reflect a more focused regulatory program, or a terminally differentiated state. By statistical approximation, `scGini` utilized a Negatibe-Binomial model to correct for the impact of library size in sparse counts data typically encountered in single cell RNA-seq and calculated the true Gini index for each single cell.
+More details about the method can be referred to the preprint.
+
 ## Installation
+The latest version of `scGini` R package can be installed from Github.
+```r
+require(pbmcapply)
+require(ineq)
+require(ggplot2)
+devtools::install_github("xianingz/scGini")
+library(scGini)
+```
+
+## Example data
+```{r}
+load("~/storage/Diversity/data/mou.example.RData")
+```
+
+```{r}
+dim(mou.dat)
+```
+```{r}
+head(mou.dat[1:5,1:5])
+```
+
 
 ## Goodness of fit
+Before applying `scGini` to the full dataset, we recommend a diagnosis of the goodness of fit for individual cells randomly selected from your sample. `NBFitPlot` will estimate the model parameters from the data and draw a plot with both observed count frequencies and theoretical probabilities to show the goodness of fit. Proceed to use `scGini` only when a satisfying fitting can be obtained.
+```{r fig.height=4, fig.width=4}
+NBFitPlot(mou.dat[,1], seed=1)
+```
 
 ## Calculation of corrected Gini index
+```{r eval=FALSE}
+mou.cgini <- scGini(mou.dat, ncore = 4)
+head(mou.cgini)
+```
+In the returned data frame, there are five columns  
+`eta`,  `alpha`: $\eta$ and $\alpha$ parameters in the negative binomial model estimated from observed data.  
+`Iter`: The number of iterations before convergence.  
+`Gini`: The Gini index calculated directly from the data  
+`cGini`: Corrected Gini index calculated by scGini  
+
+## Neighborhood smoothing
+```{r}
+sGini <- scGiniSmooth(mou.dat, mou.cgini$cGini, nGenes=1000)
+```
+
+
+```{r fig.width=4, fig.height=4}
+df.mou.pc <- data.frame(nUMIs=mou.numis, cGini=mou.cgini$cGini, Gini=mou.cgini$Gini,  sGini=sGini, CellType=as.factor(mou.label))
+# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"8","Spermatogonia")
+# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"9","Spermatocyte")
+# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"10","RoundSpermatid")
+# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"11","Elongating")
+# df.mou.pc$CellType <- factor(df.mou.pc$CellType, levels=c("Spermatogonia","Spermatocyte","RoundSpermatid","Elongating"))
+ggplot(df.mou.pc, aes(CellType, Gini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black")+ theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")
+ggplot(df.mou.pc, aes(CellType, cGini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black") + theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")
+ggplot(df.mou.pc, aes(CellType, sGini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black")+ theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")
+```
