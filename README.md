@@ -20,6 +20,5 @@ NBFitPlot(scdat, seed=1)
 scGini(dat, ncore=1)
 ```
 
-
 ## Reference
-
+For more information, check out the [preprint]() and [tutorial]().
