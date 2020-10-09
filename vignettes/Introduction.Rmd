@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(scGini)
 library(ggplot2)
+library(gridExtra)
 ```
 
 `scGini` is built based on the concept that Gini index can be used to quantify the differentiation potency of single cells in scRNA-seq data. Generally, a larger Gini index implies a higher level of uneven distribution of the gene expression within a cell. Such a cell devotes most of its transcripts on a smaller spectrum of unique genes, and this in turn may reflect a more focused regulatory program, or a terminally differentiated state. By statistical approximation, `scGini` utilized a Negatibe-Binomial model to correct for the impact of library size in sparse counts data typically encountered in single cell RNA-seq and calculated the true Gini index for each single cell.
@@ -33,21 +34,24 @@ library(scGini)
 ```
 
 ## Example data
-```{r}
+```{r echo=FALSE}
 load("~/storage/Diversity/data/mou.example.RData")
+load("~/storage/Diversity/data/vigentte.RData")
 ```
 
+Here, we used a mouse germ cell dataset as an example for how to use `scGini`. This example dataset include 400 cells and 37,241 genes, with 100 cells from each of the Spermatogonia, Spermatocyte, Round Spermatid and Elongating Spermatid cell types.
 ```{r}
 dim(mou.dat)
 ```
+The input data for `scGini` would need to be the raw expression data without any normalization or transformation. You can use either the full set of genes you have or protein-coding genes only. Both gene sets showed similar results in our analysis. 
 ```{r}
-head(mou.dat[1:5,1:5])
+mou.dat[1:5,1:5]
 ```
 
 
 ## Goodness of fit
 Before applying `scGini` to the full dataset, we recommend a diagnosis of the goodness of fit for individual cells randomly selected from your sample. `NBFitPlot` will estimate the model parameters from the data and draw a plot with both observed count frequencies and theoretical probabilities to show the goodness of fit. Proceed to use `scGini` only when a satisfying fitting can be obtained.
-```{r fig.height=4, fig.width=4}
+```{r fig.height=3, fig.width=3}
 NBFitPlot(mou.dat[,1], seed=1)
 ```
 
@@ -63,19 +67,17 @@ In the returned data frame, there are five columns
 `cGini`: Corrected Gini index calculated by scGini  
 
 ## Neighborhood smoothing
+The results from `scGini` can be further improved by borrowing information from neighboring cells. `scGiniSmooth` functions implements a neighborhood difussion map to improve the scGini prediction.
+
 ```{r}
 sGini <- scGiniSmooth(mou.dat, mou.cgini$cGini, nGenes=1000)
 ```
 
-
-```{r fig.width=4, fig.height=4}
+Comparison of Gini index without correction, corrected Gini index and smoothed corrected Gini index
+```{r fig.width=8, fig.height=2.5}
 df.mou.pc <- data.frame(nUMIs=mou.numis, cGini=mou.cgini$cGini, Gini=mou.cgini$Gini,  sGini=sGini, CellType=as.factor(mou.label))
-# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"8","Spermatogonia")
-# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"9","Spermatocyte")
-# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"10","RoundSpermatid")
-# df.mou.pc$CellType <- str_replace_all(df.mou.pc$CellType,"11","Elongating")
-# df.mou.pc$CellType <- factor(df.mou.pc$CellType, levels=c("Spermatogonia","Spermatocyte","RoundSpermatid","Elongating"))
-ggplot(df.mou.pc, aes(CellType, Gini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black")+ theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")
-ggplot(df.mou.pc, aes(CellType, cGini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black") + theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")
-ggplot(df.mou.pc, aes(CellType, sGini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black")+ theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")
+p1 <- ggplot(df.mou.pc, aes(CellType, Gini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black")+ theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none") + ggtitle("Gini index without correction")
+p2 <- ggplot(df.mou.pc, aes(CellType, cGini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black") + theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")+ ggtitle("corrected Gini index")
+p3 <- ggplot(df.mou.pc, aes(CellType, sGini, color=CellType)) + geom_violin(scale = "width") + geom_jitter(alpha=0.3) + stat_summary(fun.data="mean_sdl", geom="pointrange", color="black")+ theme(panel.background = element_rect(fill = "white", colour = "black"), axis.text.x = element_text(angle=10, hjust = 0.6, size=10),legend.position = "none")+ ggtitle("smoothed corrected Gini index")
+do.call("grid.arrange", c(list(p1,p2,p3), ncol=3))
 ```
